@@ -15,10 +15,10 @@ export function Header() {
         <Link href="/" className="inline-flex items-center gap-3 group">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#222222' }}>
-              <span className="font-bold text-lg" style={{ color: '#FFFFFF' }}>S</span>
+              <span className="font-bold text-lg" style={{ color: '#FFFFFF' }}>I</span>
             </div>
             <span className="text-lg font-semibold group-hover:opacity-80 transition-opacity" style={{ color: '#FFFFFF' }}>
-              SEO Gap Analyzer
+              Investor Finder
             </span>
           </div>
         </Link>

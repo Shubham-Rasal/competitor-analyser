@@ -1,32 +1,27 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { TextShimmer } from '@/components/ui/text-shimmer';
-import { ArrowRight, Search, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { useIsSignedIn } from '@coinbase/cdp-hooks';
 import { getCurrentUser, toViemAccount } from '@coinbase/cdp-core';
 import { wrapFetchWithPayment, x402Client } from '@x402/fetch';
-import { ExactEvmScheme } from '@x402/evm';
-import { createWalletClient, http, publicActions } from 'viem';
-import { base } from 'viem/chains';
+import { ExactEvmScheme, toClientEvmSigner } from '@x402/evm';
+import { createPublicClient, http } from 'viem';
+import { baseSepolia } from 'viem/chains';
 import { COST_CONFIG } from '@/lib/config';
-import { validateUrl, normalizeUrl } from '@/lib/validation';
 import { AsciiBackground } from '@/components/AsciiBackground';
-
 
 export default function Home() {
   const [url, setUrl] = useState('');
-  const [keyword, setKeyword] = useState('');
+  const [focus, setFocus] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const [paymentFetch, setPaymentFetch] = useState<typeof fetch | null>(null);
-  const authButtonRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { isSignedIn } = useIsSignedIn();
 
-  // Setup wrapped fetch with payment capability when user signs in
   useEffect(() => {
     async function setupPaymentFetch() {
       if (!isSignedIn) {
@@ -36,44 +31,18 @@ export default function Home() {
 
       try {
         const user = await getCurrentUser();
-
-        if (!user?.evmSmartAccounts?.[0]) {
-          console.warn('[Setup] No Smart Wallet found. User may need to sign out and back in.');
-          return;
-        }
-
-        console.log('[Setup] Smart Wallet found:', user.evmSmartAccounts[0]);
+        if (!user?.evmSmartAccounts?.[0]) return;
 
         const viemAccount = await toViemAccount(user.evmSmartAccounts[0]);
+        const publicClient = createPublicClient({
+          chain: baseSepolia,
+          transport: http('https://sepolia.base.org'),
+        });
+        const signer = toClientEvmSigner(viemAccount, publicClient);
 
-        const walletClient = createWalletClient({
-          account: viemAccount,
-          chain: base,
-          transport: http('https://mainnet.base.org'),
-        }).extend(publicActions);
-
-        console.log('[Setup] Setting up x402 v2 client for Base network (eip155:8453)');
-
-        const signer = {
-          address: viemAccount.address,
-          signTypedData: async (message: any) => {
-            return await walletClient.signTypedData({
-              account: viemAccount,
-              domain: message.domain,
-              types: message.types,
-              primaryType: message.primaryType,
-              message: message.message,
-            });
-          },
-        };
-
-        const client = new x402Client()
-          .register('eip155:8453', new ExactEvmScheme(signer));
-
+        const client = new x402Client().register('eip155:84532', new ExactEvmScheme(signer));
         const wrapped = wrapFetchWithPayment(fetch, client);
-
         setPaymentFetch(() => wrapped);
-        console.log('[Setup] ✓ x402 v2 payment fetch ready');
       } catch (error) {
         console.error('[Setup] Failed to create payment fetch:', error);
       }
@@ -86,14 +55,13 @@ export default function Home() {
     e.preventDefault();
     setError(null);
 
-    const urlError = validateUrl(url);
-    if (urlError) {
-      setError(urlError);
+    if (!url.trim() || url.trim().length < 4) {
+      setError('Please enter your website URL');
       return;
     }
 
-    if (!keyword.trim()) {
-      setError('Please enter a target keyword');
+    if (!focus.trim() || focus.trim().length < 2) {
+      setError('Please enter a focus area (e.g., pricing, features, content)');
       return;
     }
 
@@ -114,48 +82,36 @@ export default function Home() {
     setLoading(true);
 
     try {
-      // Get wallet address
       const user = await getCurrentUser();
-      const walletAddress = user?.evmSmartAccounts?.[0] ?
-        (await toViemAccount(user.evmSmartAccounts[0])).address :
-        'unknown';
+      const walletAddress = user?.evmSmartAccounts?.[0]
+        ? (await toViemAccount(user.evmSmartAccounts[0])).address
+        : 'unknown';
 
-      // Normalize the URL (add https:// if missing)
-      const normalizedUrl = normalizeUrl(url);
+      const rawUrl = url.trim();
+      const normalizedUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
 
-      console.log('[SEO Analysis] Starting analysis for:', normalizedUrl);
-      console.log('[Payment] Using x402-wrapped fetch for payment handling');
-
-      const response = await paymentFetch('/api/workflows/seo-analysis', {
+      const response = await paymentFetch('/api/workflows/competitor-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           url: normalizedUrl,
+          focus: focus.trim(),
           userId: walletAddress,
-          targetKeyword: keyword.trim(),
         }),
       });
 
-      console.log('[Workflow] Response status:', response.status);
-
       if (response.status === 402) {
-        console.warn('[Payment] Payment required (402)');
-
-        // Parse 402 response to check for insufficient funds
         try {
           const data = await response.json();
           if (data.invalidReason === 'insufficient_funds') {
-            throw new Error(`Insufficient USDC balance. You need at least $${COST_CONFIG.seoAnalysis} USDC on Base network. Please add funds and try again.`);
-          } else {
-            throw new Error(`Payment failed. Please ensure you have sufficient USDC balance ($${COST_CONFIG.seoAnalysis}) on Base network.`);
+            throw new Error(`Insufficient USDC balance. You need at least $${COST_CONFIG.competitorAnalysis} USDC on Base Sepolia.`);
           }
         } catch (parseError) {
-          // If we can't parse the response, show generic payment error
           if (parseError instanceof Error && parseError.message.includes('USDC')) {
-            throw parseError; // Re-throw our custom error
+            throw parseError;
           }
-          throw new Error(`Payment failed. Please ensure you have sufficient USDC balance ($${COST_CONFIG.seoAnalysis}) on Base network.`);
         }
+        throw new Error(`Payment failed. Please ensure you have sufficient USDC balance ($${COST_CONFIG.competitorAnalysis}) on Base Sepolia.`);
       }
 
       if (!response.ok) {
@@ -164,68 +120,58 @@ export default function Home() {
       }
 
       const { runId } = await response.json();
-      console.log('[Workflow] ✓ Analysis started:', runId);
-
       router.push(`/report/${runId}`);
-
     } catch (error) {
       console.error('[Client] Failed to start analysis:', error);
-
       let errorMessage = 'An unknown error occurred';
       if (error instanceof Error) {
         if (error.message.includes('402') || error.message.includes('Payment')) {
-          errorMessage = `Payment failed. Please ensure you have sufficient USDC balance ($${COST_CONFIG.seoAnalysis}) on Base network.`;
+          errorMessage = `Payment failed. Please ensure you have sufficient USDC balance ($${COST_CONFIG.competitorAnalysis}) on Base Sepolia.`;
         } else if (error.message.includes('rejected')) {
           errorMessage = 'Payment was rejected by your wallet';
-        } else if (error.message.includes('Insufficient funds')) {
-          errorMessage = `Insufficient USDC balance. You need at least $${COST_CONFIG.seoAnalysis} USDC on Base.`;
         } else {
           errorMessage = error.message;
         }
       }
-
       setError(errorMessage);
       setLoading(false);
     }
   };
 
+  const isValid = url.trim().length >= 4 && focus.trim().length >= 2;
+
   return (
     <div className="flex items-center justify-center" style={{ backgroundColor: '#212121', minHeight: '100vh', paddingBottom: '80px' }}>
       <AsciiBackground />
       <main className="w-full">
-        {/* Hero Section */}
         <section className="max-w-6xl mx-auto px-8 md:px-6 w-full pt-16 md:pt-0">
           <div className="text-center mb-6 md:mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 md:mb-4" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
               <Sparkles className="w-4 h-4" style={{ color: '#888888' }} />
-              <span className="text-sm font-medium" style={{ color: '#CCCCCC' }}>AI-Powered SEO Analysis</span>
+              <span className="text-sm font-medium" style={{ color: '#CCCCCC' }}>AI-Powered Competitor Intelligence</span>
             </div>
 
             <h1 className="text-4xl md:text-7xl font-bold mb-3 md:mb-4 leading-tight px-2" style={{ color: '#FFFFFF' }}>
-              Find Your SEO
+              Know Your
               <br />
-              <span style={{ color: '#888888' }}>Gaps in Minutes</span>
+              <span style={{ color: '#888888' }}>Competition</span>
             </h1>
 
             <p className="text-sm md:text-2xl mb-6 md:mb-3 max-w-2xl mx-auto leading-relaxed px-4 md:px-0" style={{ color: '#CCCCCC' }}>
-              Compare your site against top competitors and get actionable insights to improve your search rankings
+              Discover and analyse your top competitors with SWOT analysis and strategic recommendations
             </p>
           </div>
 
-          {/* Main CTA Form */}
           <div className="max-w-2xl mx-auto px-4 md:px-0">
             <form onSubmit={handleSubmit} className="space-y-2">
               <div className="relative">
                 <input
                   type="text"
                   value={url}
-                  onChange={(e) => {
-                    setUrl(e.target.value);
-                    setError(null);
-                  }}
+                  onChange={(e) => { setUrl(e.target.value); setError(null); }}
                   onFocus={() => setFocused(true)}
                   onBlur={() => setFocused(false)}
-                  placeholder="example.com"
+                  placeholder="Your website URL (e.g., myapp.com)"
                   disabled={loading}
                   className="w-full px-4 md:px-6 py-4 md:py-5 text-base md:text-lg rounded-xl border-2 transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
@@ -239,12 +185,9 @@ export default function Home() {
               <div className="relative">
                 <input
                   type="text"
-                  value={keyword}
-                  onChange={(e) => {
-                    setKeyword(e.target.value);
-                    setError(null);
-                  }}
-                  placeholder="Target keyword (e.g., graphic design)"
+                  value={focus}
+                  onChange={(e) => { setFocus(e.target.value); setError(null); }}
+                  placeholder="Focus area (e.g., pricing, features, content strategy)"
                   disabled={loading}
                   className="w-full px-4 md:px-6 py-4 md:py-5 text-base md:text-lg rounded-xl border-2 transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
@@ -263,37 +206,27 @@ export default function Home() {
 
               <button
                 type="submit"
-                disabled={loading || !url.trim() || !keyword.trim()}
+                disabled={loading || !isValid}
                 className="w-full py-4 md:py-5 px-6 rounded-xl font-semibold text-base md:text-lg transition-all flex items-center justify-center gap-3 group disabled:cursor-not-allowed relative overflow-hidden mt-6 md:mt-8"
                 style={{
-                  backgroundColor: (loading || !url.trim() || !keyword.trim()) ? '#CCCCCC' : '#FFFFFF',
+                  backgroundColor: (loading || !isValid) ? '#CCCCCC' : '#FFFFFF',
                   color: '#000000',
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading && url.trim() && keyword.trim()) {
-                    e.currentTarget.style.backgroundColor = '#F5F5F5';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading && url.trim() && keyword.trim()) {
-                    e.currentTarget.style.backgroundColor = '#FFFFFF';
-                  }
                 }}
               >
                 {loading ? (
                   <span className="text-base md:text-lg font-semibold" style={{ color: '#000000' }}>
-                    Analyzing your site...
+                    Analysing competitors...
                   </span>
                 ) : (
                   <>
-                    <span>Start Analysis</span>
+                    <span>Analyse Competitors</span>
                     <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
               </button>
 
               <p className="text-center text-xs md:text-sm px-2" style={{ color: '#999999' }}>
-                Powered by Hyperbrowser • ${COST_CONFIG.seoAnalysis} USDC per report
+                Powered by AI • ${COST_CONFIG.competitorAnalysis} USDC per report
               </p>
             </form>
           </div>

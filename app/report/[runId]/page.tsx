@@ -3,30 +3,25 @@ import { notFound } from 'next/navigation';
 import { WorkflowStatusClient } from '@/components/WorkflowStatusClient';
 
 interface ReportPageProps {
-  params: Promise<{
-    runId: string;
-  }>;
+  params: Promise<{ runId: string }>;
 }
 
 export default async function ReportPage({ params }: ReportPageProps) {
   const { runId } = await params;
 
-  // Fetch initial report data from database
   const report = await getReportByRunId(runId);
 
   if (!report) {
     notFound();
   }
 
-  // Calculate progress based on completed steps
+  // Progress: siteInfo 10%, rawCompetitorList 20%, competitorData 25%, competitorAnalysis 20%, reportData 25%
   let progress = 0;
-  if (report.userSiteData) progress += 15;
-  if (report.discoveredKeywords) progress += 15;
-  if (report.competitorData) progress += 30;
-  if (report.patterns) progress += 10;
-  if (report.gaps) progress += 10;
-  if (report.recommendations) progress += 10;
-  if (report.reportData || report.reportHtml) progress += 10;
+  if (report.siteInfo) progress += 10;
+  if (report.rawCompetitorList) progress += 20;
+  if (report.competitorData) progress += 25;
+  if (report.competitorAnalysis) progress += 20;
+  if (report.reportData) progress += 25;
 
   if (report.status === 'completed') {
     progress = 100;
@@ -35,15 +30,14 @@ export default async function ReportPage({ params }: ReportPageProps) {
   const initialData = {
     status: report.status,
     progress,
-    userUrl: report.userUrl,
+    url: report.url,
+    focus: report.focus,
     completedSteps: {
-      userSiteData: !!report.userSiteData,
-      discoveredKeywords: !!report.discoveredKeywords,
+      siteInfo: !!report.siteInfo,
+      rawCompetitorList: !!report.rawCompetitorList,
       competitorData: !!report.competitorData,
-      patterns: !!report.patterns,
-      gaps: !!report.gaps,
-      recommendations: !!report.recommendations,
-      reportHtml: !!(report.reportData || report.reportHtml),
+      competitorAnalysis: !!report.competitorAnalysis,
+      reportData: !!report.reportData,
     },
   };
 

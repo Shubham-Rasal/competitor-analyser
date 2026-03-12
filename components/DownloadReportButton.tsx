@@ -1,10 +1,10 @@
 'use client';
 
 import { Download } from 'lucide-react';
-import type { StructuredReportData } from '@/types/report-data';
+import type { StructuredCompetitorReportData } from '@/types/report-data';
 
 interface DownloadReportButtonProps {
-  reportData: StructuredReportData;
+  reportData: StructuredCompetitorReportData;
   userUrl: string;
   runId: string;
 }

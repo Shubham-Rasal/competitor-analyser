@@ -1,23 +1,21 @@
 import clientPromise from './mongodb';
-import type { SEOReport } from '@/types';
+import type { CompetitorReport } from '@/types';
 
-// Using dedicated database 'seo-agent' in the shared MongoDB cluster
-// This ensures no conflicts with other projects using the same cluster
-const DB_NAME = 'seo-agent';
-const COLLECTION_NAME = 'seo_reports';
+const DB_NAME = 'competitor-analyser';
+const COLLECTION_NAME = 'competitor_reports';
 
-export async function saveReport(report: SEOReport): Promise<void> {
+export async function saveReport(report: CompetitorReport): Promise<void> {
   const client = await clientPromise;
   const db = client.db(DB_NAME);
-  const collection = db.collection<SEOReport>(COLLECTION_NAME);
+  const collection = db.collection<CompetitorReport>(COLLECTION_NAME);
 
   await collection.insertOne(report);
 }
 
-export async function getReportByRunId(runId: string): Promise<SEOReport | null> {
+export async function getReportByRunId(runId: string): Promise<CompetitorReport | null> {
   const client = await clientPromise;
   const db = client.db(DB_NAME);
-  const collection = db.collection<SEOReport>(COLLECTION_NAME);
+  const collection = db.collection<CompetitorReport>(COLLECTION_NAME);
 
   const report = await collection.findOne({ runId });
   return report;
@@ -26,11 +24,11 @@ export async function getReportByRunId(runId: string): Promise<SEOReport | null>
 export async function updateReportStatus(
   runId: string,
   status: 'analyzing' | 'completed' | 'failed',
-  data?: Partial<SEOReport>
+  data?: Partial<CompetitorReport>
 ): Promise<void> {
   const client = await clientPromise;
   const db = client.db(DB_NAME);
-  const collection = db.collection<SEOReport>(COLLECTION_NAME);
+  const collection = db.collection<CompetitorReport>(COLLECTION_NAME);
 
   await collection.updateOne(
     { runId },
@@ -38,10 +36,10 @@ export async function updateReportStatus(
   );
 }
 
-export async function updateReport(runId: string, data: Partial<SEOReport>): Promise<void> {
+export async function updateReport(runId: string, data: Partial<CompetitorReport>): Promise<void> {
   const client = await clientPromise;
   const db = client.db(DB_NAME);
-  const collection = db.collection<SEOReport>(COLLECTION_NAME);
+  const collection = db.collection<CompetitorReport>(COLLECTION_NAME);
 
   await collection.updateOne(
     { runId },
@@ -52,13 +50,13 @@ export async function updateReport(runId: string, data: Partial<SEOReport>): Pro
 export async function getUserReports(
   userId: string,
   options: { limit?: number; offset?: number } = {}
-): Promise<{ reports: SEOReport[]; total: number; hasMore: boolean }> {
-  const limit = Math.min(options.limit || 50, 100); // Max 100 per request
+): Promise<{ reports: CompetitorReport[]; total: number; hasMore: boolean }> {
+  const limit = Math.min(options.limit || 50, 100);
   const offset = options.offset || 0;
 
   const client = await clientPromise;
   const db = client.db(DB_NAME);
-  const collection = db.collection<SEOReport>(COLLECTION_NAME);
+  const collection = db.collection<CompetitorReport>(COLLECTION_NAME);
 
   const [reports, total] = await Promise.all([
     collection
@@ -77,5 +75,4 @@ export async function getUserReports(
   };
 }
 
-// Alias for consistency
 export const getReportsByUserId = getUserReports;

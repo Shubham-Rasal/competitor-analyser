@@ -1,90 +1,75 @@
 'use client';
 
-import { ExternalLink } from 'lucide-react';
-
-interface Competitor {
-  rank: number;
-  url: string;
-  title: string;
-  wordCount: number;
-  h2Count: number;
-}
+import type { CompetitorProfile } from '@/types/report-data';
 
 interface CompetitorListProps {
-  competitors: Competitor[];
-  primaryKeyword: string;
+  competitors: CompetitorProfile[];
 }
 
-export function CompetitorList({ competitors, primaryKeyword }: CompetitorListProps) {
-  if (!competitors || competitors.length === 0) {
-    return null;
-  }
+export function CompetitorList({ competitors }: CompetitorListProps) {
+  if (!competitors || competitors.length === 0) return null;
 
   return (
-    <div className="rounded-2xl p-8 border" style={{ backgroundColor: '#1A1A1A', borderColor: '#2A2A2A' }}>
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2" style={{ color: '#FFFFFF' }}>Competitors Analyzed</h2>
-        <p className="text-sm" style={{ color: '#888888' }}>
-          Top {competitors.length} pages ranking for "{primaryKeyword}"
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        {competitors.map((competitor, index) => (
-          <div
-            key={index}
-            className="p-5 rounded-lg border transition-colors"
-            style={{ backgroundColor: '#222222', borderColor: '#2A2A2A' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#333333';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#2A2A2A';
-            }}
-          >
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ backgroundColor: '#2A2A2A', color: '#CCCCCC' }}>
-                #{competitor.rank}
-              </div>
-              <div className="flex-1 min-w-0">
+    <div className="rounded-2xl border p-6" style={{ backgroundColor: '#1A1A1A', borderColor: '#2A2A2A' }}>
+      <h2 className="text-xl font-bold mb-4" style={{ color: '#FFFFFF' }}>Top Competitors</h2>
+      <div className="space-y-4">
+        {competitors.map((competitor, i) => (
+          <div key={i} className="rounded-xl border p-5" style={{ backgroundColor: '#111111', borderColor: '#2A2A2A' }}>
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#2A2A2A', color: '#888888' }}>
+                    #{i + 1}
+                  </span>
+                  <h3 className="font-semibold text-base" style={{ color: '#FFFFFF' }}>{competitor.name}</h3>
+                </div>
                 <a
-                  href={competitor.url}
+                  href={competitor.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 group mb-2"
-                >
-                  <h3 
-                    className="font-semibold truncate group-hover:underline"
-                    style={{ color: '#FFFFFF' }}
-                  >
-                    {competitor.title}
-                  </h3>
-                  <ExternalLink className="w-4 h-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#888888' }} />
-                </a>
-                <a
-                  href={competitor.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm block truncate mb-3 hover:underline"
+                  className="text-xs hover:underline"
                   style={{ color: '#888888' }}
                 >
-                  {competitor.url}
+                  {competitor.website}
                 </a>
-                <div className="flex items-center gap-4 text-xs" style={{ color: '#666666' }}>
-                  <span>{competitor.wordCount.toLocaleString()} words</span>
-                  <span>•</span>
-                  <span>{competitor.h2Count} H2 headings</span>
-                </div>
+              </div>
+              <div className="flex-shrink-0 text-right">
+                <p className="text-xs uppercase tracking-wider mb-1" style={{ color: '#666666' }}>Threat</p>
+                <p
+                  className="text-2xl font-bold"
+                  style={{ color: competitor.relevanceScore >= 80 ? '#EF4444' : competitor.relevanceScore >= 60 ? '#F59E0B' : '#22C55E' }}
+                >
+                  {competitor.relevanceScore}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm mb-4" style={{ color: '#AAAAAA' }}>{competitor.description}</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: '#22C55E' }}>Strengths</p>
+                <ul className="space-y-1">
+                  {competitor.strengths.map((s, j) => (
+                    <li key={j} className="text-xs flex items-start gap-2" style={{ color: '#888888' }}>
+                      <span style={{ color: '#22C55E' }}>+</span> {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: '#EF4444' }}>Weaknesses</p>
+                <ul className="space-y-1">
+                  {competitor.weaknesses.map((w, j) => (
+                    <li key={j} className="text-xs flex items-start gap-2" style={{ color: '#888888' }}>
+                      <span style={{ color: '#EF4444' }}>−</span> {w}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="mt-6 p-4 rounded-lg border" style={{ backgroundColor: '#222222', borderColor: '#2A2A2A' }}>
-        <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
-          <strong style={{ color: '#CCCCCC' }}>Note:</strong> These competitors were identified by searching for "{primaryKeyword}" and represent the top-ranking pages that your site is compared against in this analysis.
-        </p>
       </div>
     </div>
   );

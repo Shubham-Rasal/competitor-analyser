@@ -5,26 +5,24 @@ import { logAndSanitizeError } from '@/lib/safe-errors';
 export async function GET() {
   try {
     const client = await clientPromise;
-    const db = client.db('seo-agent');
-    const collection = db.collection('seo_reports');
+    const db = client.db('competitor-analyser');
+    const collection = db.collection('competitor_reports');
 
     const reports = await collection.find({}).sort({ createdAt: -1 }).limit(10).toArray();
 
     return NextResponse.json({
       count: reports.length,
-      reports: reports.map(r => ({
+      reports: reports.map((r) => ({
         runId: r.runId,
         status: r.status,
-        userUrl: r.userUrl,
+        url: r.url,
+        focus: r.focus,
         createdAt: r.createdAt,
-        hasReportHtml: !!r.reportHtml,
+        hasReportData: !!r.reportData,
       })),
     });
   } catch (error) {
     const safeError = logAndSanitizeError(error, 'debug-reports-list');
-    return NextResponse.json(
-      { error: safeError },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: safeError }, { status: 500 });
   }
 }

@@ -15,15 +15,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const domain = "https://x402seo-agent.vercel.app";
+const domain = "https://competitor-analyser.vercel.app";
 
 export const metadata: Metadata = {
-  title: "SEO Gap Analyzer - AI-Powered SEO Analysis",
-  description: "Discover your SEO gaps in minutes. Compare your site against top competitors and get actionable insights to improve your search rankings. Powered by Hyperbrowser and AI.",
-  keywords: ["SEO", "SEO analysis", "competitor analysis", "keyword research", "SEO gaps", "content optimization", "search engine optimization"],
-  authors: [{ name: "SEO Gap Analyzer" }],
-  creator: "SEO Gap Analyzer",
-  publisher: "SEO Gap Analyzer",
+  title: "Competitor Analyser - AI-Powered Competitor Intelligence",
+  description: "Discover and analyse your top competitors in minutes. Get a SWOT analysis and strategic recommendations tailored to your focus area. Powered by AI.",
+  keywords: ["competitor analysis", "competitive intelligence", "SWOT analysis", "startup strategy", "market research"],
+  authors: [{ name: "Competitor Analyser" }],
+  creator: "Competitor Analyser",
+  publisher: "Competitor Analyser",
   metadataBase: new URL(domain),
   alternates: {
     canonical: domain,
@@ -32,24 +32,24 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: domain,
-    siteName: "SEO Gap Analyzer",
-    title: "SEO Gap Analyzer - AI-Powered SEO Analysis",
-    description: "Discover your SEO gaps in minutes. Compare your site against top competitors and get actionable insights to improve your search rankings.",
+    siteName: "Competitor Analyser",
+    title: "Competitor Analyser - AI-Powered Competitor Intelligence",
+    description: "Discover and analyse your top competitors in minutes. SWOT analysis and strategic recommendations.",
     images: [
       {
         url: `${domain}/og.png`,
         width: 1200,
         height: 630,
-        alt: "SEO Gap Analyzer - AI-Powered SEO Analysis",
+        alt: "Competitor Analyser - AI-Powered Competitor Intelligence",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "SEO Gap Analyzer - AI-Powered SEO Analysis",
-    description: "Discover your SEO gaps in minutes. Compare your site against top competitors and get actionable insights.",
+    title: "Competitor Analyser - AI-Powered Competitor Intelligence",
+    description: "Discover your top competitors in minutes and get strategic recommendations.",
     images: [`${domain}/og.png`],
-    creator: "@seogapanalyzer",
+    creator: "@competitoranalyser",
   },
   icons: {
     icon: [

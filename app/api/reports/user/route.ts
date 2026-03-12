@@ -10,29 +10,24 @@ export async function GET(request: Request) {
     const offsetParam = searchParams.get('offset');
 
     if (!userId || typeof userId !== 'string') {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Parse and validate pagination params
     const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10), 1), 100) : 50;
     const offset = offsetParam ? Math.max(parseInt(offsetParam, 10), 0) : 0;
 
-    console.log('[API] Fetching reports for user:', userId, { limit, offset });
+    console.log('[API] Fetching competitor reports for user:', userId, { limit, offset });
 
     const { reports, total, hasMore } = await getReportsByUserId(userId, { limit, offset });
 
     return NextResponse.json({
       success: true,
-      reports: reports.map(report => ({
+      reports: reports.map((report) => ({
         runId: report.runId,
-        url: report.userUrl,
-        targetKeyword: report.targetKeyword,
+        url: report.url,
+        focus: report.focus,
         status: report.status,
         createdAt: report.createdAt,
-        googleRanking: report.googleRanking,
       })),
       total,
       hasMore,
@@ -45,10 +40,7 @@ export async function GET(request: Request) {
   } catch (error) {
     const safeError = logAndSanitizeError(error, 'user-reports-fetch');
     return NextResponse.json(
-      {
-        success: false,
-        error: safeError,
-      },
+      { success: false, error: safeError },
       { status: 500 }
     );
   }

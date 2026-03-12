@@ -4,15 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useIsSignedIn } from '@coinbase/cdp-hooks';
 import { getCurrentUser, toViemAccount } from '@coinbase/cdp-core';
-import { FileText, Calendar, TrendingUp, ArrowRight, Home } from 'lucide-react';
+import { FileText, Calendar, ArrowRight, Home } from 'lucide-react';
 
 interface Report {
   runId: string;
   url: string;
-  targetKeyword: string;
+  focus: string;
   status: 'analyzing' | 'completed' | 'failed';
   createdAt: number;
-  googleRanking?: number | null;
 }
 
 export default function ReportsPage() {
@@ -34,17 +33,15 @@ export default function ReportsPage() {
 
       try {
         const user = await getCurrentUser();
-        const walletAddress = user?.evmSmartAccounts?.[0] ?
-          (await toViemAccount(user.evmSmartAccounts[0])).address :
-          null;
+        const walletAddress = user?.evmSmartAccounts?.[0]
+          ? (await toViemAccount(user.evmSmartAccounts[0])).address
+          : null;
 
         if (!walletAddress) {
           setError('Could not get wallet address');
           setLoading(false);
           return;
         }
-
-        console.log('[Reports] Fetching reports for:', walletAddress);
 
         const response = await fetch(`/api/reports/user?userId=${walletAddress}&limit=8&offset=0`);
         const data = await response.json();
@@ -73,20 +70,18 @@ export default function ReportsPage() {
     setLoadingMore(true);
     try {
       const user = await getCurrentUser();
-      const walletAddress = user?.evmSmartAccounts?.[0] ?
-        (await toViemAccount(user.evmSmartAccounts[0])).address :
-        null;
+      const walletAddress = user?.evmSmartAccounts?.[0]
+        ? (await toViemAccount(user.evmSmartAccounts[0])).address
+        : null;
 
-      if (!walletAddress) {
-        return;
-      }
+      if (!walletAddress) return;
 
       const offset = reports.length;
       const response = await fetch(`/api/reports/user?userId=${walletAddress}&limit=8&offset=${offset}`);
       const data = await response.json();
 
       if (data.success) {
-        setReports(prev => [...prev, ...data.reports]);
+        setReports((prev) => [...prev, ...data.reports]);
         setHasMore(data.hasMore);
       }
     } catch (err) {
@@ -106,40 +101,21 @@ export default function ReportsPage() {
     });
   };
 
-  // Not signed in
   if (!isSignedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#212121' }}>
         <div className="max-w-md w-full mx-auto px-6 text-center">
-          <div className="mb-6">
-            <FileText className="w-12 h-12 md:w-16 md:h-16 mx-auto" style={{ color: '#666666' }} />
-          </div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: '#FFFFFF' }}>
-            Sign In Required
-          </h1>
-          <p className="text-base md:text-lg mb-8" style={{ color: '#888888' }}>
-            Please sign in to view your report history
-          </p>
-          <button
-            onClick={() => router.push('/')}
-            className="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 mx-auto text-sm md:text-base"
-            style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#F5F5F5';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#FFFFFF';
-            }}
-          >
-            <Home className="w-4 h-4" />
-            <span>Go Home</span>
+          <FileText className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-6" style={{ color: '#666666' }} />
+          <h1 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: '#FFFFFF' }}>Sign In Required</h1>
+          <p className="text-base md:text-lg mb-8" style={{ color: '#888888' }}>Please sign in to view your report history</p>
+          <button onClick={() => router.push('/')} className="px-6 py-3 rounded-lg font-medium flex items-center gap-2 mx-auto" style={{ backgroundColor: '#FFFFFF', color: '#000000' }}>
+            <Home className="w-4 h-4" /> Go Home
           </button>
         </div>
       </div>
     );
   }
 
-  // Loading
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#212121' }}>
@@ -151,70 +127,41 @@ export default function ReportsPage() {
     );
   }
 
-  // Error
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#212121' }}>
         <div className="max-w-md w-full mx-auto px-6 text-center">
-          <p className="text-base md:text-lg mb-8" style={{ color: '#EF4444' }}>
-            {error}
-          </p>
-          <button
-            onClick={() => router.push('/')}
-            className="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 mx-auto text-sm md:text-base"
-            style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
-          >
-            <Home className="w-4 h-4" />
-            <span>Go Home</span>
+          <p className="text-base md:text-lg mb-8" style={{ color: '#EF4444' }}>{error}</p>
+          <button onClick={() => router.push('/')} className="px-6 py-3 rounded-lg font-medium flex items-center gap-2 mx-auto" style={{ backgroundColor: '#FFFFFF', color: '#000000' }}>
+            <Home className="w-4 h-4" /> Go Home
           </button>
         </div>
       </div>
     );
   }
 
-  // No reports yet
   if (reports.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#212121' }}>
         <div className="max-w-md w-full mx-auto px-6 text-center">
-          <div className="mb-6">
-            <FileText className="w-12 h-12 md:w-16 md:h-16 mx-auto" style={{ color: '#666666' }} />
-          </div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: '#FFFFFF' }}>
-            No Reports Yet
-          </h1>
-          <p className="text-base md:text-lg mb-8" style={{ color: '#888888' }}>
-            You haven't created any SEO reports yet
-          </p>
-          <button
-            onClick={() => router.push('/')}
-            className="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 mx-auto text-sm md:text-base"
-            style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#F5F5F5';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#FFFFFF';
-            }}
-          >
-            <Home className="w-4 h-4" />
-            <span>Start First Analysis</span>
+          <FileText className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-6" style={{ color: '#666666' }} />
+          <h1 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: '#FFFFFF' }}>No Reports Yet</h1>
+          <p className="text-base md:text-lg mb-8" style={{ color: '#888888' }}>You haven't run any competitor analyses yet</p>
+          <button onClick={() => router.push('/')} className="px-6 py-3 rounded-lg font-medium flex items-center gap-2 mx-auto" style={{ backgroundColor: '#FFFFFF', color: '#000000' }}>
+            <Home className="w-4 h-4" /> Analyse Competitors
           </button>
         </div>
       </div>
     );
   }
 
-  // Show reports
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#212121' }}>
       <div className="max-w-5xl mx-auto px-4 md:px-6 pt-28 md:pt-16 pb-16">
         <div className="mb-10 md:mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: '#FFFFFF' }}>
-            Your SEO Reports
-          </h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: '#FFFFFF' }}>Your Competitor Reports</h1>
           <p className="text-sm md:text-base" style={{ color: '#888888' }}>
-            {total > 0 ? `Showing ${reports.length} of ${total} reports` : 'View and access your previous SEO analyses'}
+            {total > 0 ? `Showing ${reports.length} of ${total} reports` : 'View your previous analyses'}
           </p>
         </div>
 
@@ -229,65 +176,25 @@ export default function ReportsPage() {
               <div className="flex items-start justify-between gap-3 md:gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-3 md:mb-2">
-                    <h3 className="text-base md:text-xl font-semibold truncate" style={{ color: '#FFFFFF' }}>
-                      {report.url}
-                    </h3>
+                    <h3 className="text-base md:text-xl font-semibold truncate" style={{ color: '#FFFFFF' }}>{report.url}</h3>
                     {report.status === 'completed' && (
-                      <span
-                        className="px-2 py-1 rounded text-xs font-medium w-fit"
-                        style={{ backgroundColor: '#1E3A1E', color: '#4ADE80' }}
-                      >
-                        Completed
-                      </span>
+                      <span className="px-2 py-1 rounded text-xs font-medium w-fit" style={{ backgroundColor: '#1E3A1E', color: '#4ADE80' }}>Completed</span>
                     )}
                     {report.status === 'analyzing' && (
-                      <span
-                        className="px-2 py-1 rounded text-xs font-medium w-fit"
-                        style={{ backgroundColor: '#3A3A1A', color: '#EAB308' }}
-                      >
-                        Analyzing
-                      </span>
+                      <span className="px-2 py-1 rounded text-xs font-medium w-fit" style={{ backgroundColor: '#3A3A1A', color: '#EAB308' }}>Analyzing</span>
                     )}
                     {report.status === 'failed' && (
-                      <span
-                        className="px-2 py-1 rounded text-xs font-medium w-fit"
-                        style={{ backgroundColor: '#3A1A1A', color: '#EF4444' }}
-                      >
-                        Failed
-                      </span>
+                      <span className="px-2 py-1 rounded text-xs font-medium w-fit" style={{ backgroundColor: '#3A1A1A', color: '#EF4444' }}>Failed</span>
                     )}
                   </div>
 
                   <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 mb-3">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 flex-shrink-0" style={{ color: '#666666' }} />
-                      <span className="text-xs md:text-sm truncate" style={{ color: '#888888' }}>
-                        {report.targetKeyword}
-                      </span>
-                    </div>
+                    <span className="text-xs md:text-sm" style={{ color: '#888888' }}>Focus: {report.focus}</span>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 flex-shrink-0" style={{ color: '#666666' }} />
-                      <span className="text-xs md:text-sm" style={{ color: '#888888' }}>
-                        {formatDate(report.createdAt)}
-                      </span>
+                      <span className="text-xs md:text-sm" style={{ color: '#888888' }}>{formatDate(report.createdAt)}</span>
                     </div>
                   </div>
-
-                  {report.googleRanking !== undefined && report.googleRanking !== null && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs uppercase tracking-wider" style={{ color: '#666666' }}>
-                        Google Ranking:
-                      </span>
-                      <span
-                        className="text-sm font-semibold"
-                        style={{
-                          color: report.googleRanking <= 10 ? '#22C55E' : report.googleRanking <= 30 ? '#EAB308' : '#EF4444'
-                        }}
-                      >
-                        #{report.googleRanking}
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 <ArrowRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#666666' }} />
@@ -302,38 +209,13 @@ export default function ReportsPage() {
               onClick={loadMoreReports}
               disabled={loadingMore}
               className="w-full md:w-auto px-8 py-3 rounded-lg font-medium transition-all text-sm md:text-base"
-              style={{
-                backgroundColor: loadingMore ? '#3A3A3A' : '#FFFFFF',
-                color: loadingMore ? '#888888' : '#000000',
-                cursor: loadingMore ? 'not-allowed' : 'pointer',
-              }}
-              onMouseEnter={(e) => {
-                if (!loadingMore) {
-                  e.currentTarget.style.backgroundColor = '#F5F5F5';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loadingMore) {
-                  e.currentTarget.style.backgroundColor = '#FFFFFF';
-                }
-              }}
+              style={{ backgroundColor: loadingMore ? '#3A3A3A' : '#FFFFFF', color: loadingMore ? '#888888' : '#000000' }}
             >
               {loadingMore ? 'Loading...' : 'Load More Reports'}
             </button>
           )}
-
-          <button
-            onClick={() => router.push('/')}
-            className="w-full md:w-auto px-6 py-3 rounded-lg font-medium transition-all text-sm md:text-base"
-            style={{ backgroundColor: '#2A2A2A', color: '#FFFFFF' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#3A3A3A';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#2A2A2A';
-            }}
-          >
-            Create New Analysis
+          <button onClick={() => router.push('/')} className="w-full md:w-auto px-6 py-3 rounded-lg font-medium" style={{ backgroundColor: '#2A2A2A', color: '#FFFFFF' }}>
+            New Analysis
           </button>
         </div>
       </div>
