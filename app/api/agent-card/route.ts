@@ -16,7 +16,7 @@ export async function GET() {
     name: 'Competitor Analyser Agent',
     description:
       'AI-powered competitor intelligence. Accepts your website URL and a focus area (e.g. "pricing", "features", "content"), then discovers and analyses your top competitors. Returns a structured report with SWOT analysis and strategic recommendations. Payment-gated via x402 (USDC on Base Sepolia).',
-    image: `${baseUrl}/logo.svg`,
+    image: `${baseUrl}/logo.png`,
     active: true,
     x402Support: true,
     healthUrl: `${baseUrl}/api/health`,

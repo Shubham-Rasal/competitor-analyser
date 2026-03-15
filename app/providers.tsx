@@ -5,7 +5,7 @@ import { CDPReactProvider, type Theme } from '@coinbase/cdp-react';
 const CONFIG = {
   projectId: process.env.NEXT_PUBLIC_CDP_PROJECT_ID ?? '',
   appName: 'SEO Gap Analysis Agent',
-  appLogoUrl: '/logo.svg',
+  appLogoUrl: '/logo.png',
   authMethods: ['email', 'oauth:x', 'oauth:google'] as any,  // Enable email, X/Twitter, and Google OAuth login
   ethereum: {
     createOnLogin: "smart" as const,  // Smart Wallet (ERC-4337) required for x402 v2
